@@ -1,5 +1,17 @@
 import re
+import json
 from models import MotherCandidate, GooglebooksResponse, GooglebooksVolume
+
+from utils.logging import configure_logging, get_logger
+
+configure_logging()
+logger = get_logger(__name__)
+
+with open("mappings/language_mapping.json", "r") as f:
+    LANGUAGE_MAPPING = json.load(f)
+
+with open("mappings/tag_mapping.json", "r") as f:
+    TAG_MAPPING = json.load(f)
 
 
 def adapt_googlebooks_response(
@@ -38,10 +50,16 @@ def adapt_googlebooks_item(item: GooglebooksVolume) -> MotherCandidate:
         isbn10=get_identifier(industry_identifiers, "ISBN_10"),
         page_count=volume_info.get("pageCount"),
         publisher=volume_info.get("publisher"),
-        language_ids=None,  # TODO: create a mapping
-        node_ids=None,  # TODO: create a mapping
-        tag_node_ids=None,  # TODO: create a mapping
-        binding_id=None,  # TODO: create a mapping
+        language_ids=[LANGUAGE_MAPPING.get(volume_info.get("language"))],
+        node_ids=[
+            TAG_MAPPING.get(tag.lower().strip().rstrip("."))
+            for tag in volume_info.get("categories", [])
+        ],
+        tag_node_ids=[
+            TAG_MAPPING.get(tag.lower().strip().rstrip("."))
+            for tag in volume_info.get("categories", [])
+        ],
+        binding_id=0,  # bindings are not available in googlebooks
         source="googlebooks",
     )
 
